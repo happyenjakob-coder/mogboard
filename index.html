@@ -1,0 +1,1150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mogboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a face-scan clinic for your portfolio. Rating panel (radar "face") up top, then the board, the tools, the ledger, the protocol. Single dark look, by choice. */
+:root {
+  color-scheme: dark;
+  --bg: #0b0e18;
+  --panel: #121726;
+  --panel-2: #181e31;
+  --line: #252c44;
+  --line-2: #323a57;
+  --fg: #e8eaf3;
+  --muted: #9aa1bb;
+  --faint: #646c8a;
+  --gold: #e3bb62;        /* phi gold: the accent */
+  --gold-dim: rgba(227,187,98,.16);
+  --ice: #8ccaf2;         /* wins / positive polarity */
+  --rose: #e2789a;        /* losses / negative polarity */
+  --good: #4fc68d;
+  --warn: #f1a64b;
+  --bad: #ef5e6c;
+  --good-bg: rgba(79,198,141,.14);
+  --warn-bg: rgba(241,166,75,.14);
+  --bad-bg: rgba(239,94,108,.15);
+  --neutral-bg: rgba(154,161,187,.12);
+  --f-display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r: 10px;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.5 var(--f-body);
+  padding-inline: 16px;
+  padding-block: 0 48px;
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.num, td.n, .mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+/* ---------- header ---------- */
+header.top {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px;
+  padding-block: 18px 14px; border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand h1 {
+  margin: 0; font: 900 34px/1 var(--f-display); letter-spacing: .04em; text-transform: uppercase;
+}
+.brand h1 span { color: var(--gold); }
+.brand .tag { color: var(--muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.top-right { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.mode-chip {
+  font: 500 11px/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase;
+  padding: 6px 9px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted);
+}
+.mode-chip.live { color: var(--good); border-color: rgba(79,198,141,.4); }
+.mode-chip.demo { color: var(--warn); border-color: rgba(241,166,75,.4); }
+.cap-field { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+.cap-field input { width: 120px; }
+
+/* ---------- banner ---------- */
+.banner {
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 18px; align-items: center;
+  padding: 16px 20px; border-radius: var(--r); background: var(--panel); border: 1px solid var(--line);
+}
+.banner .verdict {
+  grid-row: span 2; font: 900 clamp(34px, 6vw, 58px)/.9 var(--f-display); text-transform: uppercase; letter-spacing: .01em;
+}
+.banner.back .verdict { color: var(--gold); }
+.banner.over .verdict { color: var(--rose); }
+.banner.mid .verdict { color: var(--fg); }
+.banner .line1 { font-weight: 600; }
+.banner .line2 { color: var(--muted); }
+@media (max-width: 560px) { .banner { grid-template-columns: 1fr; } .banner .verdict { grid-row: auto; } }
+
+/* ---------- rating panel ---------- */
+.rating { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 22px; }
+@media (max-width: 860px) { .rating { grid-template-columns: 1fr; } }
+.scan {
+  position: relative; border-radius: var(--r); border: 1px solid var(--line);
+  background:
+    linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 100% 28px,
+    linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 28px 100%,
+    var(--panel);
+  background-blend-mode: normal;
+  padding: 14px 10px 6px; overflow: hidden;
+}
+.scan::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, transparent 30%, var(--panel) 78%); pointer-events: none; }
+.scan svg { position: relative; display: block; width: 100%; height: auto; }
+.scan .scan-label {
+  position: absolute; top: 12px; left: 14px; z-index: 1;
+  font: 500 10px/1.3 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint);
+}
+.scan .scanline {
+  position: absolute; left: 0; right: 0; height: 2px; top: 0; z-index: 1;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: .5;
+  animation: scan 4.5s ease-in-out infinite alternate;
+}
+@keyframes scan { from { top: 4%; } to { top: 94%; } }
+@media (prefers-reduced-motion: reduce) { .scan .scanline { animation: none; display: none; } }
+
+.score-card { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.psl-big { display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; }
+.psl-big .val { font: 900 clamp(76px, 12vw, 120px)/.8 var(--f-display); color: var(--gold); letter-spacing: -.01em; }
+.psl-big .unit { font: 800 22px/1 var(--f-display); letter-spacing: .12em; color: var(--muted); text-transform: uppercase; }
+.psl-big .tier { font: 800 30px/1 var(--f-display); text-transform: uppercase; letter-spacing: .03em; }
+.psl-big .tier small { display: block; font: 400 13px/1.4 var(--f-body); color: var(--muted); letter-spacing: 0; text-transform: none; margin-top: 4px; }
+.scale { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; }
+.scale div { height: 8px; border-radius: 2px; background: var(--line-2); }
+.scale div.on { background: var(--gold); }
+.scale-labels { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; font: 500 9.5px/1.2 var(--f-mono); color: var(--faint); text-transform: uppercase; letter-spacing: .04em; }
+.scale-labels span.on { color: var(--fg); }
+.fix {
+  border-left: 2px solid var(--gold); padding: 4px 0 4px 14px; color: var(--muted);
+}
+.fix b { color: var(--fg); font-weight: 600; }
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+@media (max-width: 520px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.kpi { background: var(--panel); padding: 12px 14px; min-width: 0; }
+.kpi .k { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.kpi .k em { font-style: normal; color: var(--faint); }
+.kpi .v { font: 600 20px/1.3 var(--f-mono); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.kpi .s { font-size: 12px; color: var(--faint); }
+.pos { color: var(--good); } .neg { color: var(--bad); }
+
+/* ---------- sections ---------- */
+section.block { display: flex; flex-direction: column; gap: 12px; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.sec-head h2 { margin: 0; font: 800 26px/1 var(--f-display); text-transform: uppercase; letter-spacing: .03em; text-wrap: balance; }
+.sec-head h2 small { font: 500 12px/1 var(--f-mono); color: var(--faint); letter-spacing: .06em; margin-left: 8px; }
+.sec-head p { margin: 0; color: var(--muted); font-size: 13px; max-width: 62ch; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font: 500 10.5px/1.2 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding: 10px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+th.n, td.n { text-align: right; }
+.tk { font: 700 15px/1.1 var(--f-mono); letter-spacing: .02em; }
+.tk-sub { font-size: 11.5px; color: var(--faint); }
+.side { font: 600 10px/1 var(--f-mono); padding: 3px 6px; border-radius: 4px; letter-spacing: .06em; }
+.side.long { background: rgba(140,202,242,.14); color: var(--ice); }
+.side.short { background: rgba(226,120,154,.14); color: var(--rose); }
+.ex { font: 500 9px/1 var(--f-mono); color: var(--warn); border: 1px solid rgba(241,166,75,.45); border-radius: 3px; padding: 2px 4px; margin-left: 6px; letter-spacing: .06em; vertical-align: 2px; }
+.cell-in { width: 84px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 6px; padding: 5px 7px; text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.cell-in:hover { border-color: var(--faint); }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; font: 600 10.5px/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; padding: 5px 8px; border-radius: 999px; }
+.pill.good { background: var(--good-bg); color: var(--good); }
+.pill.warn { background: var(--warn-bg); color: var(--warn); }
+.pill.bad { background: var(--bad-bg); color: var(--bad); }
+.pill.neutral { background: var(--neutral-bg); color: var(--muted); }
+.pill.gold { background: var(--gold-dim); color: var(--gold); }
+
+.tier-chip { display: inline-flex; align-items: baseline; gap: 6px; }
+.tier-chip b { font: 800 17px/1 var(--f-display); letter-spacing: .03em; text-transform: uppercase; }
+.tier-chip span { font: 500 11px/1 var(--f-mono); color: var(--faint); }
+
+/* stop → target "jawline" bar */
+.jaw { position: relative; width: 150px; height: 26px; }
+.jaw .track { position: absolute; left: 0; right: 0; top: 11px; height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--bad-bg), var(--neutral-bg) 40%, var(--good-bg)); }
+.jaw .tick { position: absolute; top: 7px; width: 1px; height: 12px; background: var(--faint); }
+.jaw .dot { position: absolute; top: 7px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--fg); border: 2px solid var(--panel); }
+.jaw .lbl { position: absolute; top: 19px; font: 500 8.5px/1 var(--f-mono); color: var(--faint); letter-spacing: .04em; transform: translateX(-50%); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  border: 1px solid var(--line-2); background: var(--panel-2); border-radius: 7px; padding: 6px 11px; font-size: 12.5px; font-weight: 500;
+}
+.btn:hover { border-color: var(--faint); }
+.btn.primary { background: var(--gold); color: #1a1405; border-color: var(--gold); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.07); }
+.btn.ghost { background: transparent; }
+.btn.danger:hover { border-color: var(--bad); color: var(--bad); }
+.btn.sm { padding: 4px 8px; font-size: 12px; }
+.actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+.close-row td { background: var(--panel-2); }
+.close-form { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; white-space: normal; }
+.close-form label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+
+.empty { padding: 28px 20px; text-align: center; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.empty b { color: var(--fg); font: 800 22px/1 var(--f-display); text-transform: uppercase; letter-spacing: .03em; }
+
+/* ---------- tools grid ---------- */
+.tools { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; }
+@media (max-width: 900px) { .tools { grid-template-columns: 1fr; } }
+.form { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.grid-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 520px) { .grid-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label { font: 500 10.5px/1.2 var(--f-mono); letter-spacing: .07em; text-transform: uppercase; color: var(--faint); }
+.field input, .field select, .cap-field input {
+  width: 100%; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 7px; padding: 8px 10px;
+  font-family: var(--f-mono); font-variant-numeric: tabular-nums;
+}
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button { cursor: pointer; border: 1px solid var(--line-2); background: var(--panel-2); border-radius: 999px; padding: 6px 11px; font-size: 12px; }
+.seg button[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+.out { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+@media (max-width: 520px) { .out { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.out div { background: var(--panel-2); padding: 10px 12px; min-width: 0; }
+.out .k { font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); }
+.out .v { font: 600 17px/1.3 var(--f-mono); font-variant-numeric: tabular-nums; }
+.tilt { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); }
+.tilt svg { flex: none; }
+.tilt .t1 { font-weight: 600; }
+.tilt .t2 { color: var(--muted); font-size: 12.5px; }
+.row-end { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.hint { color: var(--faint); font-size: 12px; }
+
+/* ---------- charts ---------- */
+.charts { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 22px; }
+@media (max-width: 900px) { .charts { grid-template-columns: 1fr; } }
+.chart { position: relative; padding: 14px 14px 8px; }
+.chart h3 { margin: 0 0 2px; font: 800 18px/1.1 var(--f-display); text-transform: uppercase; letter-spacing: .04em; }
+.chart .sub { color: var(--faint); font-size: 12px; margin-bottom: 6px; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: var(--f-mono); font-size: 10.5px; fill: var(--faint); }
+.tip {
+  position: absolute; pointer-events: none; z-index: 5; background: var(--bg); border: 1px solid var(--line-2); border-radius: 7px;
+  padding: 7px 9px; font-size: 12px; line-height: 1.4; white-space: nowrap; box-shadow: 0 6px 24px rgba(0,0,0,.4);
+}
+.tip .tk { font-size: 13px; }
+
+/* ---------- protocol + glossary ---------- */
+.bottom { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 22px; }
+@media (max-width: 900px) { .bottom { grid-template-columns: 1fr; } }
+.checks { list-style: none; margin: 0; padding: 6px 0; }
+.checks li { display: flex; gap: 12px; align-items: flex-start; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.checks li:last-child { border-bottom: 0; }
+.checks input { width: 17px; height: 17px; accent-color: var(--gold); margin-top: 2px; flex: none; }
+.checks label { cursor: pointer; }
+.checks .auto { font: 500 9.5px/1 var(--f-mono); color: var(--faint); border: 1px solid var(--line-2); border-radius: 3px; padding: 2px 4px; margin-left: 6px; letter-spacing: .06em; }
+.checks .why { display: block; color: var(--faint); font-size: 12px; }
+.proto-foot { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
+.gloss { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; }
+@media (max-width: 560px) { .gloss { grid-template-columns: 1fr; } }
+.gloss div { padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.gloss dt { font: 800 16px/1.1 var(--f-display); text-transform: uppercase; letter-spacing: .04em; color: var(--gold); }
+.gloss dd { margin: 3px 0 0; color: var(--muted); font-size: 12.5px; }
+
+footer { color: var(--faint); font-size: 12px; border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20;
+  background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 8px; padding: 10px 14px; font-size: 13px; max-width: calc(100% - 32px);
+  box-shadow: 0 8px 30px rgba(0,0,0,.45);
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Mog<span>board</span></h1>
+      <span class="tag">Swing desk · PSL-rated</span>
+    </div>
+    <div class="top-right">
+      <div class="cap-field"><label for="startEq">Starting capital</label><input id="startEq" type="number" min="0" step="100" inputmode="decimal"></div>
+      <span id="modeChip" class="mode-chip">Connecting…</span>
+    </div>
+  </header>
+
+  <div id="banner" class="banner mid">
+    <div class="verdict">Scanning…</div>
+    <div class="line1">Running facial analysis on your book.</div>
+    <div class="line2">Hold still. Mew.</div>
+  </div>
+
+  <!-- Rating -->
+  <section class="rating" aria-label="Portfolio PSL rating">
+    <div class="scan">
+      <div class="scan-label">Facial harmony scan<br>5 features · PSL 1–8</div>
+      <div class="scanline" aria-hidden="true"></div>
+      <div id="radar"></div>
+    </div>
+    <div class="score-card">
+      <div class="psl-big">
+        <div><div class="unit">PSL</div><div id="pslVal" class="val">–</div></div>
+        <div id="pslTier" class="tier">–<small>Awaiting scan</small></div>
+      </div>
+      <div>
+        <div id="scale" class="scale"></div>
+        <div id="scaleLabels" class="scale-labels" style="margin-top:6px"></div>
+      </div>
+      <div id="fix" class="fix">Load a board to get your ascension plan.</div>
+      <div id="kpis" class="kpis"></div>
+    </div>
+  </section>
+
+  <!-- Open positions -->
+  <section class="block">
+    <div class="sec-head">
+      <h2>The Lineup <small id="posCount"></small></h2>
+      <p>Open swings, each rated on the PSL scale by unrealized R. Edit <b>Last</b> to mark to market and <b>Stop</b> to trail. Anything near its stop is frauding.</p>
+    </div>
+    <div class="panel table-scroll" id="posWrap"></div>
+  </section>
+
+  <!-- Tools -->
+  <div class="tools">
+    <section class="block">
+      <div class="sec-head">
+        <h2>Frame Calculator</h2>
+        <p>Size from the stop, never from vibes.</p>
+      </div>
+      <form class="panel form" id="calc" autocomplete="off">
+        <div class="seg" role="group" aria-label="Risk per trade">
+          <button type="button" data-risk="0.5" aria-pressed="false">Softmaxx 0.5%</button>
+          <button type="button" data-risk="1" aria-pressed="true">Mewing 1%</button>
+          <button type="button" data-risk="2" aria-pressed="false">Hardmaxx 2%</button>
+        </div>
+        <div class="grid-fields">
+          <div class="field"><label for="cTicker">Ticker</label><input id="cTicker" placeholder="SOFI" maxlength="10"></div>
+          <div class="field"><label for="cSide">Side</label>
+            <select id="cSide"><option value="long">Long · ascend</option><option value="short">Short · mog it down</option></select></div>
+          <div class="field"><label for="cRisk">Risk % of equity</label><input id="cRisk" type="number" step="0.1" min="0.1" value="1" inputmode="decimal"></div>
+          <div class="field"><label for="cEntry">Entry</label><input id="cEntry" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+          <div class="field"><label for="cStop">Stop</label><input id="cStop" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+          <div class="field"><label for="cTarget">Target</label><input id="cTarget" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+          <div class="field" style="grid-column: span 3"><label for="cSetup">Setup</label><input id="cSetup" placeholder="Bull flag, VCP, pullback to 21 EMA…" maxlength="40"></div>
+        </div>
+        <div class="out" id="calcOut"></div>
+        <div class="tilt" id="tilt"></div>
+        <div class="row-end">
+          <span class="hint" id="calcHint">Enter entry and stop to size the trade.</span>
+          <button type="submit" class="btn primary">Add to lineup</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="block">
+      <div class="sec-head">
+        <h2>Hunter Eyes <small id="watchCount"></small></h2>
+        <p>Pre-ascension watchlist. Hit <b>Trigger</b> to load a setup into the Frame Calculator.</p>
+      </div>
+      <div class="panel">
+        <div class="table-scroll" id="watchWrap"></div>
+        <form id="watchForm" class="form" style="border-top:1px solid var(--line)" autocomplete="off">
+          <div class="grid-fields">
+            <div class="field"><label for="wTicker">Ticker</label><input id="wTicker" required maxlength="10" placeholder="ONON"></div>
+            <div class="field"><label for="wTrigger">Trigger</label><input id="wTrigger" type="number" step="0.01" required inputmode="decimal"></div>
+            <div class="field"><label for="wStop">Stop</label><input id="wStop" type="number" step="0.01" required inputmode="decimal"></div>
+            <div class="field"><label for="wLast">Last</label><input id="wLast" type="number" step="0.01" inputmode="decimal"></div>
+            <div class="field" style="grid-column: span 2"><label for="wSetup">Setup</label><input id="wSetup" maxlength="40" placeholder="VCP, cup & handle…"></div>
+          </div>
+          <div class="row-end"><span class="hint">Mew on it until price comes to you.</span><button class="btn" type="submit">Add to watchlist</button></div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <!-- Ledger -->
+  <section class="block">
+    <div class="sec-head">
+      <h2>Ascension Log <small id="tradeCount"></small></h2>
+      <p>Closed swings. Every exit gets a verdict: mogged, glow-up, chopped, or brutally mogged by the market.</p>
+    </div>
+    <div class="charts">
+      <div class="panel chart" id="eqChart"></div>
+      <div class="panel chart" id="rChart"></div>
+    </div>
+    <div class="panel table-scroll" id="tradeWrap"></div>
+  </section>
+
+  <!-- Protocol + glossary -->
+  <div class="bottom">
+    <section class="block">
+      <div class="sec-head"><h2>Looksmax Protocol</h2><p>Daily checklist. Resets each morning.</p></div>
+      <div class="panel" id="protocol"></div>
+    </section>
+    <section class="block">
+      <div class="sec-head"><h2>PSL Dictionary</h2><p>Trader edition.</p></div>
+      <dl class="panel gloss" style="margin:0">
+        <div><dt>Mog</dt><dd>To dominate. A position at or past its target is mogging. A market that runs your stop has mogged you.</dd></div>
+        <div><dt>PSL scale</dt><dd>1 to 8. Here it maps unrealized R: under −1R is "It's over", 0R is LTN/MTN, +3R and up is PSL God.</dd></div>
+        <div><dt>Frauding</dt><dd>Looking like a setup, trading like a bag. Within 0.25R of the stop.</dd></div>
+        <div><dt>It's over / We're so back</dt><dd>Drawdown over 5% from peak / equity at an all-time high. Both are temporary.</dd></div>
+        <div><dt>Mewing</dt><dd>Keeping your mouth shut and waiting for price to hit your trigger. Also the 1% default risk.</dd></div>
+        <div><dt>Softmaxx / Hardmaxx</dt><dd>0.5% risk while cold or unsure; 2% only for A+ setups in a strong tape.</dd></div>
+        <div><dt>Canthal tilt</dt><dd>Reward-to-risk. Positive tilt is 2R or better at target. Negative tilt is below 1.5R; skip it.</dd></div>
+        <div><dt>Cortisol</dt><dd>Open heat: what you lose if every stop hits right now, as % of equity. Keep it under 6%.</dd></div>
+        <div><dt>Copemaxxing</dt><dd>Moving a stop down because you "believe in it". Breaks the Frame streak.</dd></div>
+        <div><dt>Leanmaxxing</dt><dd>Cutting losers fast so the average loss stays small. Fixes a weak midface (profit factor).</dd></div>
+        <div><dt>Halo effect</dt><dd>One big winner making you think every trade is genius. Size stays the same after a heater.</dd></div>
+        <div><dt>Looksmatch</dt><dd>Positions that move together. Five semis is one trade at five times the size.</dd></div>
+      </dl>
+    </section>
+  </div>
+
+  <footer>
+    <span>Mogboard · prices are entered by you, there is no live feed · not financial advice, only mog advice.</span>
+    <span id="footClear"></span>
+  </footer>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+(() => {
+"use strict";
+
+/* ===================== constants ===================== */
+const TIERS = [
+  { name: "It's over", note: "Stopped or about to be. Close it." },
+  { name: "Sub3",      note: "Chopped. Deep red, under −0.5R." },
+  { name: "LTN",       note: "Low-tier normie. Slightly red." },
+  { name: "MTN",       note: "Mid-tier normie. Flat to +0.5R." },
+  { name: "HTN",       note: "High-tier normie. Working." },
+  { name: "Chadlite",  note: "+1R to +2R. Trail the stop." },
+  { name: "Chad",      note: "+2R to +3R. Mogging the tape." },
+  { name: "PSL God",   note: "+3R or more. Ascended." },
+];
+const R_BANDS = [-Infinity, -1, -0.5, 0, 0.5, 1, 2, 3, Infinity];
+const DEFAULT_SETTINGS = { startingEquity: 100000, riskPct: 1, protocol: { date: "", checks: {} } };
+const PROTOCOL = [
+  { id: "stops",   text: "Every position has a hard stop", why: "No cope holding. Auto-checks when every stop is set.", auto: true },
+  { id: "heat",    text: "Cortisol under 6%", why: "Total open heat across the lineup.", auto: true },
+  { id: "mew",     text: "Mewed on it: no FOMO entries", why: "Only took trades that hit a watchlist trigger." },
+  { id: "frame",   text: "Sized with the Frame Calculator", why: "Shares come from the stop distance." },
+  { id: "revenge", text: "No revenge trades after getting mogged", why: "A loss is information, not an insult." },
+  { id: "journal", text: "Journaled every exit", why: "Setup, reason, verdict." },
+  { id: "sleep",   text: "Sleepmaxxed (7h+)", why: "Tired traders fraud." },
+];
+
+/* Example board. Marked example:true and shown with an EXAMPLE tag. */
+const EXAMPLES = {
+  settings: { startingEquity: 100000, riskPct: 1 },
+  positions: [
+    { ticker: "ANET", side: "long",  setup: "Base breakout",       entry: 131.00, stop: 124.50, target: 150.00, shares: 150, last: 151.20, opened: "2026-09-18" },
+    { ticker: "PLTR", side: "long",  setup: "Bull flag",           entry: 148.20, stop: 139.50, target: 172.00, shares: 115, last: 161.40, opened: "2026-09-24" },
+    { ticker: "HIMS", side: "short", setup: "Failed breakout",     entry: 52.10,  stop: 56.00,  target: 42.00,  shares: 250, last: 47.30,  opened: "2026-09-30" },
+    { ticker: "NVDA", side: "long",  setup: "Pullback to 21 EMA",  entry: 182.50, stop: 174.00, target: 205.00, shares: 120, last: 184.10, opened: "2026-10-02" },
+    { ticker: "CELH", side: "long",  setup: "VCP breakout",        entry: 58.40,  stop: 54.90,  target: 68.00,  shares: 280, last: 55.60,  opened: "2026-09-29" },
+  ],
+  trades: [
+    { ticker: "AMD",  side: "long",  setup: "Bull flag",          entry: 152.00, stop: 145.00, exit: 166.50, shares: 140, opened: "2026-07-14", closed: "2026-07-25" },
+    { ticker: "SHOP", side: "long",  setup: "Breakout",           entry: 118.00, stop: 112.00, exit: 112.20, shares: 160, opened: "2026-07-21", closed: "2026-07-24" },
+    { ticker: "CRWD", side: "long",  setup: "Pullback to 21 EMA", entry: 410.00, stop: 392.00, exit: 446.00, shares: 55,  opened: "2026-07-30", closed: "2026-08-12" },
+    { ticker: "TSLA", side: "short", setup: "Lower high",         entry: 330.00, stop: 345.00, exit: 344.00, shares: 65,  opened: "2026-08-05", closed: "2026-08-08" },
+    { ticker: "APP",  side: "long",  setup: "VCP",                entry: 395.00, stop: 372.00, exit: 452.00, shares: 42,  opened: "2026-08-11", closed: "2026-08-27" },
+    { ticker: "RKLB", side: "long",  setup: "Breakout",           entry: 48.00,  stop: 44.60,  exit: 46.90,  shares: 290, opened: "2026-08-18", closed: "2026-08-21" },
+    { ticker: "META", side: "long",  setup: "Gap and go",         entry: 742.00, stop: 715.00, exit: 781.00, shares: 36,  opened: "2026-08-25", closed: "2026-09-10" },
+    { ticker: "COIN", side: "long",  setup: "Bull flag",          entry: 318.00, stop: 300.00, exit: 299.00, shares: 55,  opened: "2026-09-02", closed: "2026-09-05" },
+    { ticker: "UBER", side: "long",  setup: "Pullback to 21 EMA", entry: 96.50,  stop: 92.00,  exit: 104.80, shares: 220, opened: "2026-09-08", closed: "2026-09-22" },
+    { ticker: "DUOL", side: "short", setup: "Breakdown",          entry: 330.00, stop: 348.00, exit: 296.00, shares: 55,  opened: "2026-09-15", closed: "2026-09-26" },
+  ],
+  watch: [
+    { ticker: "ONON", setup: "VCP",              trigger: 51.20,   stop: 48.40,   last: 50.35 },
+    { ticker: "SOFI", setup: "Bull flag",        trigger: 29.80,   stop: 27.60,   last: 28.90 },
+    { ticker: "RDDT", setup: "Breakout retest",  trigger: 212.00,  stop: 196.00,  last: 204.70 },
+    { ticker: "MELI", setup: "Cup and handle",   trigger: 2420.00, stop: 2310.00, last: 2361.00 },
+  ],
+};
+
+/* ===================== state ===================== */
+const S = {
+  mode: "connecting",          // connecting | live | demo
+  settings: clone(DEFAULT_SETTINGS),
+  positions: [], trades: [], watch: [],
+  loaded: { positions: false, trades: false, watch: false },
+  closing: null,
+};
+let DB = null;
+
+/* ===================== helpers ===================== */
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+function uid() { return Math.random().toString(36).slice(2, 9) + Date.now().toString(36); }
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function num(v) { const n = parseFloat(v); return Number.isFinite(n) ? n : NaN; }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function todayStr() { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function daysBetween(a, b) { const x = Date.parse(a), y = Date.parse(b); return Number.isFinite(x) && Number.isFinite(y) ? Math.max(0, Math.round((y - x) / 864e5)) : 0; }
+const fmtUsd0 = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const fmtPx = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function usd(v, sign) { const s = fmtUsd0.format(Math.abs(v)); return sign ? (v > 0 ? "+" : v < 0 ? "−" : "") + s : (v < 0 ? "−" + s : s); }
+function px(v) { return Number.isFinite(v) ? fmtPx.format(v) : "–"; }
+function rFmt(r) { return Number.isFinite(r) ? (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r).toFixed(2) + "R" : "–"; }
+function pct(v, d = 1) { return Number.isFinite(v) ? (v * 100).toFixed(d) + "%" : "–"; }
+function sgnCls(v) { return v > 0 ? "pos" : v < 0 ? "neg" : ""; }
+function fmtDate(s) { const d = new Date(s + "T00:00:00"); return isNaN(d) ? s : d.toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
+
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
+}
+
+/* ===================== trade math ===================== */
+const dir = p => (p.side === "short" ? -1 : 1);
+const riskPerShare = p => Math.abs(p.entry - p.stop);
+function openR(p) { const r = riskPerShare(p); return r ? (dir(p) * (p.last - p.entry)) / r : 0; }
+function openPnl(p) { return dir(p) * (p.last - p.entry) * p.shares; }
+function targetR(p) { const r = riskPerShare(p); return r && Number.isFinite(p.target) ? (dir(p) * (p.target - p.entry)) / r : NaN; }
+function heatOf(p) { return Math.max(0, dir(p) * (p.last - p.stop) * p.shares); }
+function tradeR(t) { const r = Math.abs(t.entry - t.stop); return r ? (dir(t) * (t.exit - t.entry)) / r : 0; }
+function tradePnl(t) { return dir(t) * (t.exit - t.entry) * t.shares; }
+
+function pslFromR(R) {
+  for (let i = 0; i < 8; i++) {
+    const lo = R_BANDS[i], hi = R_BANDS[i + 1];
+    if (R < hi) {
+      let frac;
+      if (!Number.isFinite(lo)) frac = clamp(1 - (lo === -Infinity ? (hi - R) / 1 : 0), 0, .99);
+      else if (!Number.isFinite(hi)) frac = 0;
+      else frac = (R - lo) / (hi - lo);
+      return { idx: i, score: clamp(i + 1 + frac * .99, 1, 8), tier: TIERS[i] };
+    }
+  }
+  return { idx: 7, score: 8, tier: TIERS[7] };
+}
+function tierFromScore(s) { const i = clamp(Math.floor(s) - 1, 0, 7); return { idx: i, tier: TIERS[i] }; }
+
+function status(p) {
+  const R = openR(p), tR = targetR(p);
+  if (dir(p) * (p.last - p.stop) <= 0) return { cls: "bad", icon: "✕", label: "It's over" };
+  if (Number.isFinite(tR) && R >= tR) return { cls: "good", icon: "▲", label: "Mogging" };
+  if (R <= -0.75) return { cls: "warn", icon: "▼", label: "Frauding" };
+  if (R >= 0.25) return { cls: "good", icon: "↗", label: "Ascending" };
+  return { cls: "neutral", icon: "●", label: "Mid" };
+}
+function verdict(R) {
+  if (R >= 1) return { cls: "gold", label: "Mogged" };
+  if (R >= 0) return { cls: "good", label: "Glow-up" };
+  if (R > -1) return { cls: "warn", label: "Chopped" };
+  return { cls: "bad", label: "Mogged by market" };
+}
+
+function computeStats() {
+  const start = num(S.settings.startingEquity) || 0;
+  const trades = [...S.trades].sort((a, b) => (a.closed || "").localeCompare(b.closed || ""));
+  const realized = trades.reduce((s, t) => s + tradePnl(t), 0);
+  const unreal = S.positions.reduce((s, p) => s + openPnl(p), 0);
+  const equity = start + realized + unreal;
+  const heat = S.positions.reduce((s, p) => s + heatOf(p), 0);
+  const Rs = trades.map(tradeR);
+  const wins = Rs.filter(r => r > 0).length;
+  const grossW = trades.filter(t => tradePnl(t) > 0).reduce((s, t) => s + tradePnl(t), 0);
+  const grossL = -trades.filter(t => tradePnl(t) < 0).reduce((s, t) => s + tradePnl(t), 0);
+  const winRate = trades.length ? wins / trades.length : NaN;
+  const avgR = trades.length ? Rs.reduce((a, b) => a + b, 0) / trades.length : NaN;
+  const pf = grossL > 0 ? grossW / grossL : (grossW > 0 ? Infinity : NaN);
+  let streak = 0;
+  for (let i = Rs.length - 1; i >= 0; i--) { if (Rs[i] >= -1.15) streak++; else break; }
+  // equity curve (realized) and peak/drawdown measured on realized + open
+  const curve = [{ label: "Start", date: trades[0]?.opened || "", eq: start, t: null }];
+  let run = start;
+  trades.forEach(t => { run += tradePnl(t); curve.push({ label: t.ticker, date: t.closed, eq: run, t }); });
+  const peak = Math.max(...curve.map(c => c.eq), equity);
+  const dd = peak > 0 ? (peak - equity) / peak : 0;
+  const heatPct = equity > 0 ? heat / equity : 0;
+
+  const has = trades.length > 0;
+  const features = [
+    { key: "Jawline",  metric: "Win rate",      val: has ? pct(winRate, 0) : "–", score: has ? clamp(1 + (winRate - .25) / .45 * 7, 1, 8) : 4,
+      fix: "Your win rate is weak. Only take A+ setups from the watchlist and mew on everything else." },
+    { key: "Eye area", metric: "Avg R",         val: has ? rFmt(avgR) : "–", score: has ? clamp(1 + (avgR + .5) / 1.5 * 7, 1, 8) : 4,
+      fix: "Your average R is low. Hold runners to target instead of cutting winners at +0.5R." },
+    { key: "Midface",  metric: "Profit factor", val: has ? (pf === Infinity ? "∞" : pf.toFixed(2)) : "–", score: has ? (pf === Infinity ? 8 : clamp(1 + (pf - .5) / 2.5 * 7, 1, 8)) : 4,
+      fix: "Losers are too big next to winners. Leanmaxx: exit at the stop, no exceptions." },
+    { key: "Skin",     metric: "Cortisol",      val: pct(heatPct), score: clamp(8 - heatPct / .10 * 7, 1, 8),
+      fix: "Open heat is high. Trim size or trail stops until cortisol is under 6%." },
+    { key: "Frame",    metric: "Stop streak",   val: has ? String(streak) : "–", score: has ? clamp(1 + streak / 8 * 7, 1, 8) : 4,
+      fix: "Your discipline streak is short. Copemaxxing past −1R resets it to zero." },
+  ];
+  const psl = features.reduce((s, f) => s + f.score, 0) / features.length;
+  return { start, equity, realized, unreal, heat, heatPct, winRate, avgR, pf, streak, curve, peak, dd, trades, features, psl, wins };
+}
+
+/* ===================== rendering ===================== */
+function isLoading() { return S.mode === "connecting" || (S.mode === "live" && !(S.loaded.positions && S.loaded.trades && S.loaded.watch)); }
+function render() {
+  const st = computeStats();
+  renderMode();
+  renderBanner(st);
+  renderRating(st);
+  renderPositions(st);
+  renderWatch();
+  renderTrades(st);
+  renderCharts(st);
+  renderProtocol(st);
+  renderFooter();
+  const se = document.getElementById("startEq");
+  if (document.activeElement !== se) se.value = S.settings.startingEquity ?? "";
+  updateCalc();
+}
+
+function renderMode() {
+  const c = document.getElementById("modeChip");
+  c.className = "mode-chip " + (S.mode === "live" ? "live" : S.mode === "demo" ? "demo" : "");
+  c.textContent = S.mode === "live" ? "● Saved to your board" : S.mode === "demo" ? "Example board · not saved" : "Connecting…";
+  c.title = S.mode === "demo" ? "Saving needs the Claude artifact viewer while signed in. Changes here last until you reload." : "";
+}
+
+function renderBanner(st) {
+  const el = document.getElementById("banner");
+  const fraud = S.positions.filter(p => ["Frauding", "It's over"].includes(status(p).label));
+  const fraudLine = fraud.length ? `${fraud.length} position${fraud.length > 1 ? "s are" : " is"} frauding near the stop: ${fraud.map(p => esc(p.ticker)).join(", ")}.` : "No positions frauding. Clean skin.";
+  let cls, word, l1;
+  if (!S.trades.length && !S.positions.length) { cls = "mid"; word = "Pre-ascension"; l1 = "Empty book. Add a setup with the Frame Calculator."; }
+  else if (st.dd <= 0.0005 && st.equity > st.start) { cls = "back"; word = "We're so back"; l1 = `Equity ${usd(st.equity)} is at an all-time high. You are mogging your past self.`; }
+  else if (st.dd > 0.05) { cls = "over"; word = "It's over"; l1 = `Down ${pct(st.dd)} from the ${usd(st.peak)} peak. It isn't actually over: drop to softmaxx size and mew.`; }
+  else { cls = "mid"; word = st.equity >= st.start ? "Mid but ascending" : "Lowkey cooked"; l1 = `${pct(st.dd)} off the ${usd(st.peak)} peak. Stay on protocol.`; }
+  el.className = "banner " + cls;
+  el.innerHTML = `<div class="verdict">${word}</div><div class="line1">${l1}</div><div class="line2">${fraudLine}</div>`;
+}
+
+function renderRating(st) {
+  // radar
+  const W = 480, H = 320, cx = W / 2, cy = 164, R = 100, n = st.features.length;
+  const ang = i => -Math.PI / 2 + i * 2 * Math.PI / n;
+  const pt = (i, v) => [cx + Math.cos(ang(i)) * R * v / 8, cy + Math.sin(ang(i)) * R * v / 8];
+  let g = "";
+  [2, 4, 6, 8].forEach(l => {
+    const pts = st.features.map((_, i) => pt(i, l).join(",")).join(" ");
+    g += `<polygon points="${pts}" fill="none" stroke="var(--line-2)" stroke-width="1" ${l === 8 ? "" : 'stroke-dasharray="2 4"'}/>`;
+  });
+  st.features.forEach((_, i) => { const [x, y] = pt(i, 8); g += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--line-2)" stroke-width="1"/>`; });
+  [2, 4, 6, 8].forEach(l => { g += `<text x="${cx + 4}" y="${cy - R * l / 8 + 3}" font-size="9" fill="var(--faint)" font-family="var(--f-mono)">${l}</text>`; });
+  const poly = st.features.map((f, i) => pt(i, f.score).join(",")).join(" ");
+  g += `<polygon points="${poly}" fill="var(--gold-dim)" stroke="var(--gold)" stroke-width="2" stroke-linejoin="round"/>`;
+  st.features.forEach((f, i) => {
+    const [x, y] = pt(i, f.score);
+    g += `<circle cx="${x}" cy="${y}" r="4.5" fill="var(--gold)" stroke="var(--panel)" stroke-width="2"><title>${f.key} · ${f.metric} ${f.val} · ${f.score.toFixed(1)} PSL</title></circle>`;
+    const [lx, ly] = [cx + Math.cos(ang(i)) * (R + 22), cy + Math.sin(ang(i)) * (R + 22)];
+    const anchor = Math.abs(lx - cx) < 6 ? "middle" : lx > cx ? "start" : "end";
+    const dy = ly < cy - 10 ? -12 : ly > cy + 10 ? 4 : -4;
+    g += `<text x="${lx}" y="${ly + dy}" text-anchor="${anchor}" fill="var(--fg)" font-family="var(--f-display)" font-weight="800" font-size="15" letter-spacing="0.6">${f.key.toUpperCase()} <tspan fill="var(--gold)">${f.score.toFixed(1)}</tspan></text>`;
+    g += `<text x="${lx}" y="${ly + dy + 14}" text-anchor="${anchor}" fill="var(--muted)" font-family="var(--f-mono)" font-size="10">${f.metric} ${esc(f.val)}</text>`;
+  });
+  // golden-ratio "landmark" marks
+  g += `<circle cx="${cx}" cy="${cy}" r="${R / 1.618}" fill="none" stroke="var(--gold)" stroke-opacity=".18" stroke-width="1" stroke-dasharray="1 5"/>`;
+  g += `<text x="${W - 8}" y="${H - 8}" text-anchor="end" font-size="10" fill="var(--faint)" font-family="var(--f-mono)">φ 1.618</text>`;
+  document.getElementById("radar").innerHTML =
+    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Radar of five portfolio features rated 1 to 8">${g}</svg>`;
+
+  // big score
+  const t = tierFromScore(st.psl);
+  document.getElementById("pslVal").textContent = st.psl.toFixed(1);
+  const next = TIERS[t.idx + 1];
+  document.getElementById("pslTier").innerHTML = `${esc(t.tier.name)}<small>${next ? `${(t.idx + 2 - st.psl).toFixed(1)} PSL from ${esc(next.name)}` : "Peak ascension. Don't let the halo effect size you up."}</small>`;
+  document.getElementById("scale").innerHTML = TIERS.map((_, i) => `<div class="${i <= t.idx ? "on" : ""}"></div>`).join("");
+  document.getElementById("scaleLabels").innerHTML = TIERS.map((x, i) => `<span class="${i === t.idx ? "on" : ""}">${esc(x.name)}</span>`).join("");
+
+  const weakest = [...st.features].sort((a, b) => a.score - b.score)[0];
+  document.getElementById("fix").innerHTML = S.trades.length || S.positions.length
+    ? `<b>Ascension plan: fix your ${weakest.key.toLowerCase()} (${weakest.metric.toLowerCase()} ${esc(weakest.val)}).</b> ${weakest.fix}`
+    : "Close a few trades to get a real scan. Until then every feature reads MTN.";
+
+  const k = [
+    { k: "Net frame", e: "equity", v: usd(st.equity), s: `${usd(st.equity - st.start, true)} vs start`, c: sgnCls(st.equity - st.start) },
+    { k: "Aura", e: "open P&L", v: usd(st.unreal, true), s: `${S.positions.length} open`, c: sgnCls(st.unreal) },
+    { k: "Glow-up", e: "realized", v: usd(st.realized, true), s: `${st.trades.length} closed`, c: sgnCls(st.realized) },
+    { k: "Cortisol", e: "heat", v: pct(st.heatPct), s: `${usd(st.heat)} to stops`, c: st.heatPct > .06 ? "neg" : "" },
+    { k: "Mog rate", e: "win %", v: pct(st.winRate, 0), s: `${st.wins} W · ${st.trades.length - st.wins} L`, c: "" },
+    { k: "Expectancy", e: "avg R", v: rFmt(st.avgR), s: st.pf === Infinity ? "PF ∞" : Number.isFinite(st.pf) ? `PF ${st.pf.toFixed(2)}` : "PF –", c: sgnCls(st.avgR) },
+  ];
+  document.getElementById("kpis").innerHTML = k.map(x =>
+    `<div class="kpi"><div class="k">${x.k} <em>· ${x.e}</em></div><div class="v ${x.c}">${x.v}</div><div class="s">${x.s}</div></div>`).join("");
+}
+
+function jawBar(p) {
+  // map stop → target onto 0..100%, with entry tick and last dot
+  const lo = p.stop, hi = Number.isFinite(p.target) ? p.target : p.entry + (p.entry - p.stop) * 2;
+  const pos = v => clamp((v - lo) / (hi - lo) * 100, 0, 100);
+  const e = pos(p.entry), l = pos(p.last);
+  const col = openR(p) >= 0 ? "var(--good)" : "var(--bad)";
+  return `<div class="jaw" title="Stop ${px(p.stop)} · Entry ${px(p.entry)} · Target ${px(hi)} · Last ${px(p.last)}">
+    <div class="track"></div>
+    <div class="tick" style="left:${e}%"></div>
+    <div class="dot" style="left:${l}%;background:${col}"></div>
+    <span class="lbl" style="left:4%">STOP</span><span class="lbl" style="left:${clamp(e, 18, 82)}%">ENTRY</span><span class="lbl" style="left:94%">TGT</span>
+  </div>`;
+}
+
+function renderPositions(st) {
+  const wrap = document.getElementById("posWrap");
+  document.getElementById("posCount").textContent = S.positions.length ? `${S.positions.length} open` : "";
+  if (isLoading()) { wrap.innerHTML = `<div class="empty">Loading your lineup…</div>`; return; }
+  if (!S.positions.length) {
+    wrap.innerHTML = `<div class="empty"><b>No one in the lineup</b><span>Size a trade in the Frame Calculator and add it, or trigger a setup from Hunter Eyes.</span>${!S.trades.length && !S.watch.length ? `<button class="btn primary" data-act="load-examples">Load example board</button>` : ""}</div>`;
+    return;
+  }
+  const rows = [...S.positions].sort((a, b) => openR(b) - openR(a)).map(p => {
+    const R = openR(p), ps = pslFromR(R), s = status(p), pnl = openPnl(p);
+    const days = daysBetween(p.opened, todayStr());
+    let html = `<tr>
+      <td><div class="tk">${esc(p.ticker)}${p.example ? '<span class="ex">EXAMPLE</span>' : ""}</div><div class="tk-sub">${esc(p.setup || "No setup tagged")}</div></td>
+      <td><span class="side ${p.side === "short" ? "short" : "long"}">${p.side === "short" ? "SHORT" : "LONG"}</span></td>
+      <td><span class="pill ${s.cls}">${s.icon} ${s.label}</span></td>
+      <td><div class="tier-chip"><b>${esc(ps.tier.name)}</b><span>${ps.score.toFixed(1)}</span></div></td>
+      <td class="n ${sgnCls(R)}">${rFmt(R)}</td>
+      <td class="n ${sgnCls(pnl)}">${usd(pnl, true)}</td>
+      <td>${jawBar(p)}</td>
+      <td class="n"><input class="cell-in" type="number" step="0.01" value="${p.last}" data-edit="last" data-id="${p.id}" aria-label="Last price ${esc(p.ticker)}"></td>
+      <td class="n"><input class="cell-in" type="number" step="0.01" value="${p.stop}" data-edit="stop" data-id="${p.id}" aria-label="Stop ${esc(p.ticker)}"></td>
+      <td class="n">${px(p.entry)}</td>
+      <td class="n">${px(p.target)}</td>
+      <td class="n">${p.shares}</td>
+      <td class="n">${days}d</td>
+      <td><div class="actions"><button class="btn sm" data-act="close" data-id="${p.id}">Close</button><button class="btn sm ghost danger" data-act="del-pos" data-id="${p.id}" aria-label="Delete ${esc(p.ticker)}">✕</button></div></td>
+    </tr>`;
+    if (S.closing === p.id) {
+      html += `<tr class="close-row"><td colspan="14"><form class="close-form" data-close-form="${p.id}">
+        <b>Close ${esc(p.ticker)}</b>
+        <label for="cx-${p.id}">Exit price <input class="cell-in" id="cx-${p.id}" name="exit" type="number" step="0.01" value="${p.last}" required></label>
+        <label for="cd-${p.id}">Date <input class="cell-in" style="width:140px" id="cd-${p.id}" name="date" type="date" value="${todayStr()}" required></label>
+        <button class="btn primary sm" type="submit">Lock it in</button>
+        <button class="btn sm ghost" type="button" data-act="cancel-close">Cancel</button>
+      </form></td></tr>`;
+    }
+    return html;
+  }).join("");
+  wrap.innerHTML = `<table><thead><tr>
+    <th>Ticker</th><th>Side</th><th>Status</th><th>PSL tier</th><th class="n">Open R</th><th class="n">P&amp;L</th><th>Stop → target</th>
+    <th class="n">Last</th><th class="n">Stop</th><th class="n">Entry</th><th class="n">Target</th><th class="n">Shares</th><th class="n">Held</th><th></th>
+  </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderWatch() {
+  const wrap = document.getElementById("watchWrap");
+  document.getElementById("watchCount").textContent = S.watch.length ? `${S.watch.length} setups` : "";
+  if (isLoading()) { wrap.innerHTML = `<div class="empty">Loading…</div>`; return; }
+  if (!S.watch.length) { wrap.innerHTML = `<div class="empty"><span>Nothing on the radar. Add a setup below.</span></div>`; return; }
+  const rows = [...S.watch].map(w => {
+    const dist = Number.isFinite(w.last) && w.last ? (w.trigger - w.last) / w.last : NaN;
+    const near = Number.isFinite(dist) && Math.abs(dist) <= 0.015;
+    return `<tr>
+      <td><div class="tk">${esc(w.ticker)}${w.example ? '<span class="ex">EXAMPLE</span>' : ""}</div><div class="tk-sub">${esc(w.setup || "")}</div></td>
+      <td class="n">${px(w.trigger)}</td>
+      <td class="n">${px(w.stop)}</td>
+      <td class="n"><input class="cell-in" type="number" step="0.01" value="${Number.isFinite(w.last) ? w.last : ""}" data-edit="wlast" data-id="${w.id}" aria-label="Last price ${esc(w.ticker)}"></td>
+      <td class="n">${near ? '<span class="pill gold">Ready</span>' : pct(dist)}</td>
+      <td><div class="actions"><button class="btn sm" data-act="trigger" data-id="${w.id}">Trigger</button><button class="btn sm ghost danger" data-act="del-watch" data-id="${w.id}" aria-label="Remove ${esc(w.ticker)}">✕</button></div></td>
+    </tr>`;
+  }).join("");
+  wrap.innerHTML = `<table><thead><tr><th>Setup</th><th class="n">Trigger</th><th class="n">Stop</th><th class="n">Last</th><th class="n">To trigger</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderTrades(st) {
+  const wrap = document.getElementById("tradeWrap");
+  document.getElementById("tradeCount").textContent = st.trades.length ? `${st.trades.length} closed` : "";
+  if (isLoading()) { wrap.innerHTML = `<div class="empty">Loading…</div>`; return; }
+  if (!st.trades.length) { wrap.innerHTML = `<div class="empty"><span>No closed trades yet. Close a position in The Lineup to log it here.</span></div>`; return; }
+  const rows = [...st.trades].reverse().map(t => {
+    const R = tradeR(t), pnl = tradePnl(t), v = verdict(R);
+    return `<tr>
+      <td><div class="tk">${esc(t.ticker)}${t.example ? '<span class="ex">EXAMPLE</span>' : ""}</div><div class="tk-sub">${esc(t.setup || "")}</div></td>
+      <td><span class="side ${t.side === "short" ? "short" : "long"}">${t.side === "short" ? "SHORT" : "LONG"}</span></td>
+      <td><span class="pill ${v.cls}">${v.label}</span></td>
+      <td class="n ${sgnCls(R)}">${rFmt(R)}</td>
+      <td class="n ${sgnCls(pnl)}">${usd(pnl, true)}</td>
+      <td class="n">${px(t.entry)} → ${px(t.exit)}</td>
+      <td class="n">${px(t.stop)}</td>
+      <td class="n">${t.shares}</td>
+      <td class="n">${fmtDate(t.opened)} – ${fmtDate(t.closed)}</td>
+      <td class="n">${daysBetween(t.opened, t.closed)}d</td>
+      <td><div class="actions"><button class="btn sm ghost danger" data-act="del-trade" data-id="${t.id}" aria-label="Delete ${esc(t.ticker)} trade">✕</button></div></td>
+    </tr>`;
+  }).join("");
+  wrap.innerHTML = `<table><thead><tr><th>Ticker</th><th>Side</th><th>Verdict</th><th class="n">R</th><th class="n">P&amp;L</th><th class="n">Entry → exit</th><th class="n">Stop</th><th class="n">Shares</th><th class="n">Dates</th><th class="n">Held</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* ---- charts ---- */
+function niceTicks(min, max, count = 4) {
+  if (min === max) { min -= 1; max += 1; }
+  const span = max - min, step0 = span / count, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= step0) || 10 * mag;
+  const lo = Math.floor(min / step) * step, hi = Math.ceil(max / step) * step;
+  const out = []; for (let v = lo; v <= hi + step / 2; v += step) out.push(+v.toFixed(6));
+  return out;
+}
+function kfmt(v) { const a = Math.abs(v); return (v < 0 ? "−" : "") + "$" + (a >= 1e6 ? (a / 1e6).toFixed(2) + "M" : a >= 1e3 ? (a / 1e3).toFixed(1) + "k" : a.toFixed(0)); }
+
+function attachHover(box, svg, n, xs, VBW, draw, tipHtml) {
+  const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.appendChild(tip);
+  const move = ev => {
+    const r = svg.getBoundingClientRect(); if (!r.width) return;
+    const vx = (ev.clientX - r.left) / r.width * VBW;
+    let best = 0; for (let i = 1; i < n; i++) if (Math.abs(xs[i] - vx) < Math.abs(xs[best] - vx)) best = i;
+    draw(best);
+    tip.innerHTML = tipHtml(best); tip.hidden = false;
+    const br = box.getBoundingClientRect();
+    const px_ = r.left - br.left + xs[best] / VBW * r.width;
+    const tw = tip.offsetWidth;
+    tip.style.left = clamp(px_ - tw / 2, 4, br.width - tw - 4) + "px";
+    tip.style.top = "38px";
+  };
+  svg.addEventListener("pointermove", move);
+  svg.addEventListener("pointerleave", () => { tip.hidden = true; draw(-1); });
+}
+
+function renderCharts(st) {
+  const eqBox = document.getElementById("eqChart"), rBox = document.getElementById("rChart");
+  const head1 = `<h3>Ascension curve</h3><div class="sub">Realized equity after each closed swing</div>`;
+  const head2 = `<h3>Mog ledger</h3><div class="sub">R multiple per trade · ±1R guides</div>`;
+  if (st.curve.length < 2) {
+    eqBox.innerHTML = head1 + `<div class="empty"><span>The curve draws after your first closed trade.</span></div>`;
+    rBox.innerHTML = head2 + `<div class="empty"><span>No trades to rate yet.</span></div>`;
+    return;
+  }
+  // equity line
+  {
+    const W = 640, H = 230, L = 52, Rr = 14, T = 14, B = 26;
+    const vals = st.curve.map(c => c.eq);
+    const ticks = niceTicks(Math.min(...vals), Math.max(...vals));
+    const y0 = ticks[0], y1 = ticks[ticks.length - 1];
+    const n = st.curve.length;
+    const xs = st.curve.map((_, i) => L + i * (W - L - Rr) / (n - 1));
+    const y = v => T + (1 - (v - y0) / (y1 - y0)) * (H - T - B);
+    let g = "";
+    ticks.forEach(t => { g += `<line x1="${L}" x2="${W - Rr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 8}" y="${y(t) + 3.5}" text-anchor="end">${kfmt(t)}</text>`; });
+    const line = st.curve.map((c, i) => `${i ? "L" : "M"}${xs[i].toFixed(1)},${y(c.eq).toFixed(1)}`).join("");
+    g += `<defs><linearGradient id="eqfill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--gold)" stop-opacity=".28"/><stop offset="1" stop-color="var(--gold)" stop-opacity="0"/></linearGradient></defs>`;
+    g += `<path d="${line}L${xs[n - 1]},${H - B}L${xs[0]},${H - B}Z" fill="url(#eqfill)"/>`;
+    g += `<line x1="${L}" x2="${W - Rr}" y1="${y(st.start)}" y2="${y(st.start)}" stroke="var(--faint)" stroke-dasharray="3 4" stroke-width="1"/>`;
+    g += `<path d="${line}" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    // peak marker
+    let pi = 0; vals.forEach((v, i) => { if (v >= vals[pi]) pi = i; });
+    g += `<circle cx="${xs[pi]}" cy="${y(vals[pi])}" r="5" fill="var(--gold)" stroke="var(--panel)" stroke-width="2"/>`;
+    g += `<text x="${clamp(xs[pi], L + 30, W - Rr - 30)}" y="${y(vals[pi]) - 10}" text-anchor="middle" fill="var(--gold)" font-weight="600">ATH ${kfmt(vals[pi])}</text>`;
+    g += `<circle cx="${xs[n - 1]}" cy="${y(vals[n - 1])}" r="4" fill="var(--fg)" stroke="var(--panel)" stroke-width="2"/>`;
+    g += `<text x="${xs[0]}" y="${H - 8}" text-anchor="start">${st.curve[1].t ? fmtDate(st.curve[1].t.opened) : ""}</text><text x="${xs[n - 1]}" y="${H - 8}" text-anchor="end">${fmtDate(st.curve[n - 1].date)}</text>`;
+    g += `<line id="eqX" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/><circle id="eqDot" r="5" fill="var(--gold)" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>`;
+    eqBox.innerHTML = head1 + `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Equity curve from ${kfmt(vals[0])} to ${kfmt(vals[n - 1])}">${g}<rect x="${L}" y="${T}" width="${W - L - Rr}" height="${H - T - B}" fill="transparent"/></svg>`;
+    const svg = eqBox.querySelector("svg"), xl = svg.querySelector("#eqX"), dot = svg.querySelector("#eqDot");
+    attachHover(eqBox, svg, n, xs, W, i => {
+      const vis = i < 0 ? "hidden" : "visible"; xl.setAttribute("visibility", vis); dot.setAttribute("visibility", vis);
+      if (i >= 0) { xl.setAttribute("x1", xs[i]); xl.setAttribute("x2", xs[i]); dot.setAttribute("cx", xs[i]); dot.setAttribute("cy", y(vals[i])); }
+    }, i => {
+      const c = st.curve[i];
+      if (!c.t) return `<div class="tk">Start</div>${usd(c.eq)}`;
+      const p = tradePnl(c.t);
+      return `<div class="tk">${esc(c.label)} · ${fmtDate(c.date)}</div><span class="${sgnCls(p)}">${usd(p, true)}</span> · ${rFmt(tradeR(c.t))}<br>Equity ${usd(c.eq)}`;
+    });
+  }
+  // R bars
+  {
+    const W = 380, H = 230, L = 34, Rr = 8, T = 14, B = 26;
+    const Rs = st.trades.map(tradeR), n = Rs.length;
+    const mx = Math.max(1.5, ...Rs.map(Math.abs)); const lim = Math.ceil(mx);
+    const y = v => T + (1 - (v + lim) / (2 * lim)) * (H - T - B);
+    const slot = (W - L - Rr) / n, bw = clamp(slot - 4, 3, 26);
+    const xs = Rs.map((_, i) => L + slot * i + slot / 2);
+    let g = "";
+    for (let v = -lim; v <= lim; v++) {
+      const strong = v === 0, guide = Math.abs(v) === 1;
+      if (!(strong || guide || v === lim || v === -lim)) continue;
+      g += `<line x1="${L}" x2="${W - Rr}" y1="${y(v)}" y2="${y(v)}" stroke="${strong ? "var(--faint)" : "var(--line)"}" ${guide ? 'stroke-dasharray="3 4"' : ""} stroke-width="1"/><text x="${L - 6}" y="${y(v) + 3.5}" text-anchor="end">${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v)}R</text>`;
+    }
+    Rs.forEach((r, i) => {
+      const top = y(Math.max(r, 0)), bot = y(Math.min(r, 0)), h = Math.max(1.5, bot - top);
+      const col = r >= 0 ? "var(--ice)" : "var(--rose)";
+      g += `<rect class="rb" data-i="${i}" x="${xs[i] - bw / 2}" y="${top}" width="${bw}" height="${h}" rx="3" fill="${col}"/>`;
+    });
+    g += `<text x="${L}" y="${H - 8}" text-anchor="start">oldest</text><text x="${W - Rr}" y="${H - 8}" text-anchor="end">latest</text>`;
+    rBox.innerHTML = head2 + `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="R multiple for each of ${n} closed trades">${g}<rect x="${L}" y="${T}" width="${W - L - Rr}" height="${H - T - B}" fill="transparent"/></svg>`;
+    const svg = rBox.querySelector("svg"), bars = [...svg.querySelectorAll(".rb")];
+    attachHover(rBox, svg, n, xs, W, i => { bars.forEach((b, j) => b.setAttribute("opacity", i < 0 || i === j ? "1" : ".35")); }, i => {
+      const t = st.trades[i], v = verdict(Rs[i]);
+      return `<div class="tk">${esc(t.ticker)} · ${fmtDate(t.closed)}</div>${rFmt(Rs[i])} · ${v.label}`;
+    });
+  }
+}
+
+/* ---- protocol ---- */
+function protocolState() {
+  const pr = S.settings.protocol || {};
+  return pr.date === todayStr() ? (pr.checks || {}) : {};
+}
+function renderProtocol(st) {
+  const checks = protocolState();
+  const autoVal = { stops: S.positions.every(p => Number.isFinite(p.stop) && p.stop > 0), heat: st.heatPct < 0.06 };
+  let done = 0;
+  const items = PROTOCOL.map(it => {
+    const on = it.auto ? autoVal[it.id] : !!checks[it.id];
+    if (on) done++;
+    return `<li><input type="checkbox" id="pr-${it.id}" data-proto="${it.id}" ${on ? "checked" : ""} ${it.auto ? "disabled" : ""}>
+      <label for="pr-${it.id}">${esc(it.text)}${it.auto ? '<span class="auto">AUTO</span>' : ""}<span class="why">${esc(it.why)}</span></label></li>`;
+  }).join("");
+  const word = done === PROTOCOL.length ? "Full protocol. Ascending." : done >= 5 ? "Solid. Keep mewing." : done >= 3 ? "Half-maxxed." : "Protocol not started. Don't trade cooked.";
+  document.getElementById("protocol").innerHTML = `<ul class="checks">${items}</ul><div class="proto-foot"><span>${done}/${PROTOCOL.length} done today</span><span>${word}</span></div>`;
+}
+
+function renderFooter() {
+  const hasEx = [...S.positions, ...S.trades, ...S.watch].some(x => x.example);
+  document.getElementById("footClear").innerHTML = hasEx && !isLoading()
+    ? `<button class="btn sm ghost" data-act="clear-examples">Clear example rows</button>` : "";
+}
+
+/* ===================== calculator ===================== */
+function calcInputs() {
+  return {
+    ticker: document.getElementById("cTicker").value.trim().toUpperCase(),
+    side: document.getElementById("cSide").value,
+    risk: num(document.getElementById("cRisk").value),
+    entry: num(document.getElementById("cEntry").value),
+    stop: num(document.getElementById("cStop").value),
+    target: num(document.getElementById("cTarget").value),
+    setup: document.getElementById("cSetup").value.trim(),
+  };
+}
+function tiltSvg(deg) {
+  const a = clamp(deg, -20, 20) * Math.PI / 180, cx = 28, cy = 18, L = 22;
+  const x1 = cx - Math.cos(a) * L, y1 = cy + Math.sin(a) * L, x2 = cx + Math.cos(a) * L, y2 = cy - Math.sin(a) * L;
+  const col = deg > 0 ? "var(--good)" : deg < 0 ? "var(--bad)" : "var(--muted)";
+  return `<svg width="56" height="36" viewBox="0 0 56 36" aria-hidden="true">
+    <line x1="4" x2="52" y1="${cy}" y2="${cy}" stroke="var(--line-2)" stroke-dasharray="2 3"/>
+    <path d="M${x1},${y1} Q${cx},${cy - 12} ${x2},${y2} Q${cx},${cy + 10} ${x1},${y1}Z" fill="var(--panel)" stroke="${col}" stroke-width="1.5"/>
+    <circle cx="${cx}" cy="${cy - 1}" r="5" fill="${col}"/></svg>`;
+}
+function updateCalc() {
+  const c = calcInputs(), st = computeStats();
+  const equity = st.equity > 0 ? st.equity : (num(S.settings.startingEquity) || 0);
+  const rps = Math.abs(c.entry - c.stop);
+  const validDir = Number.isFinite(c.entry) && Number.isFinite(c.stop) && (c.side === "long" ? c.stop < c.entry : c.stop > c.entry);
+  const budget = equity * (c.risk || 0) / 100;
+  const shares = validDir && rps > 0 ? Math.floor(budget / rps) : 0;
+  const value = shares * (c.entry || 0);
+  const rr = validDir && Number.isFinite(c.target) && rps > 0 ? (c.side === "long" ? c.target - c.entry : c.entry - c.target) / rps : NaN;
+  const out = [
+    { k: "Shares", v: shares ? shares.toLocaleString("en-US") : "–" },
+    { k: "Max loss", v: shares ? usd(shares * rps) : "–" },
+    { k: "Position", v: shares ? usd(value) : "–" },
+    { k: "% of equity", v: shares && equity ? pct(value / equity) : "–" },
+    { k: "Risk / share", v: validDir ? px(rps) : "–" },
+    { k: "Reward : risk", v: Number.isFinite(rr) ? rr.toFixed(2) + "R" : "–" },
+  ];
+  document.getElementById("calcOut").innerHTML = out.map(o => `<div><div class="k">${o.k}</div><div class="v">${o.v}</div></div>`).join("");
+  let deg = 0, t1 = "Neutral canthal tilt", t2 = "Add a target to measure reward to risk.";
+  if (Number.isFinite(rr)) {
+    deg = clamp((rr - 1.5) * 8, -20, 20);
+    if (rr >= 3) { t1 = `Hunter eyes · +${deg.toFixed(0)}° tilt`; t2 = `${rr.toFixed(1)}R at target. Elite setup, hardmaxx is allowed if the tape agrees.`; }
+    else if (rr >= 2) { t1 = `Positive canthal tilt · +${deg.toFixed(0)}°`; t2 = `${rr.toFixed(1)}R at target. Takeable at mewing size.`; }
+    else if (rr >= 1.5) { t1 = "Neutral tilt"; t2 = `${rr.toFixed(1)}R. Mid. Softmaxx it or wait for a better entry.`; }
+    else { t1 = `Negative canthal tilt · ${deg.toFixed(0)}°`; t2 = `${rr.toFixed(1)}R. The setup is frauding. Skip it.`; }
+  }
+  document.getElementById("tilt").innerHTML = tiltSvg(deg) + `<div><div class="t1">${t1}</div><div class="t2">${t2}</div></div>`;
+  const hint = document.getElementById("calcHint");
+  if (Number.isFinite(c.entry) && Number.isFinite(c.stop) && !validDir) hint.textContent = c.side === "long" ? "For a long, the stop goes below entry." : "For a short, the stop goes above entry.";
+  else if (shares && value > equity) hint.textContent = "This position is bigger than your equity. Widen nothing; cut risk %.";
+  else hint.textContent = shares ? `Risking ${usd(budget)} (${c.risk}% of ${usd(equity)}).` : "Enter entry and stop to size the trade.";
+  document.querySelectorAll("#calc [data-risk]").forEach(b => b.setAttribute("aria-pressed", String(num(b.dataset.risk) === c.risk)));
+  return { ...c, shares, validDir };
+}
+
+/* ===================== store ===================== */
+async function put(coll, id, data) {
+  if (DB) {
+    try { await DB.collection(coll).doc(id).set(data); }
+    catch (e) { failed(e); }
+  } else {
+    const arr = S[coll]; const i = arr.findIndex(x => x.id === id);
+    const row = { id, ...data };
+    if (i >= 0) arr[i] = row; else arr.push(row);
+    render();
+  }
+}
+async function remove(coll, id) {
+  if (DB) { try { await DB.collection(coll).doc(id).delete(); } catch (e) { failed(e); } }
+  else { S[coll] = S[coll].filter(x => x.id !== id); render(); }
+}
+async function saveSettings(patch) {
+  const next = { ...clone(S.settings), ...patch };
+  if (DB) { try { await DB.doc("settings/account").set(next); } catch (e) { failed(e); } }
+  else { S.settings = next; render(); }
+}
+function failed(e) {
+  const code = e && e.code;
+  if (code === "invalid_argument") toast("This board is read-only for you. Only the owner can save changes.");
+  else if (code === "quota_exceeded") toast("Storage is full. Delete some old trades and try again.");
+  else if (code === "resource_exhausted") toast("Too many saves at once. Wait a second and try again.");
+  else toast("Couldn't save that change. Check your connection and try again.");
+}
+function strip(o) { const { id, ...rest } = o; return rest; }
+
+async function loadExamples() {
+  const ex = clone(EXAMPLES);
+  const jobs = [];
+  ex.positions.forEach(p => jobs.push(["positions", uid(), { ...p, example: true }]));
+  ex.trades.forEach(t => jobs.push(["trades", uid(), { ...t, example: true }]));
+  ex.watch.forEach(w => jobs.push(["watch", uid(), { ...w, example: true }]));
+  if (DB) {
+    for (const [c, id, d] of jobs) { try { await DB.collection(c).doc(id).set(d); } catch (e) { failed(e); return; } }
+    toast("Example board loaded. Clear it any time from the footer.");
+  } else {
+    jobs.forEach(([c, id, d]) => S[c].push({ id, ...d })); render();
+  }
+}
+async function clearExamples() {
+  const rows = ["positions", "trades", "watch"].flatMap(c => S[c].filter(x => x.example).map(x => [c, x.id]));
+  if (DB) { for (const [c, id] of rows) { try { await DB.collection(c).doc(id).delete(); } catch (e) { failed(e); return; } } toast("Example rows cleared. The board is all yours."); }
+  else { ["positions", "trades", "watch"].forEach(c => { S[c] = S[c].filter(x => !x.example); }); render(); }
+}
+
+/* ===================== events ===================== */
+document.addEventListener("click", async ev => {
+  const b = ev.target.closest("[data-act]"); if (!b) return;
+  const id = b.dataset.id, act = b.dataset.act;
+  if (act === "close") { S.closing = S.closing === id ? null : id; render(); document.getElementById("cx-" + id)?.focus(); }
+  else if (act === "cancel-close") { S.closing = null; render(); }
+  else if (act === "del-pos") {
+    if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "Delete?"; setTimeout(() => { if (b.isConnected) { b.dataset.confirm = ""; b.textContent = "✕"; } }, 2500); return; }
+    await remove("positions", id); toast("Position deleted.");
+  }
+  else if (act === "del-trade") {
+    if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "Delete?"; setTimeout(() => { if (b.isConnected) { b.dataset.confirm = ""; b.textContent = "✕"; } }, 2500); return; }
+    await remove("trades", id); toast("Trade deleted from the log.");
+  }
+  else if (act === "del-watch") { await remove("watch", id); }
+  else if (act === "trigger") {
+    const w = S.watch.find(x => x.id === id); if (!w) return;
+    document.getElementById("cTicker").value = w.ticker;
+    document.getElementById("cSide").value = w.stop > w.trigger ? "short" : "long";
+    document.getElementById("cEntry").value = w.trigger;
+    document.getElementById("cStop").value = w.stop;
+    const rps = Math.abs(w.trigger - w.stop);
+    document.getElementById("cTarget").value = (w.stop > w.trigger ? w.trigger - 2 * rps : w.trigger + 2 * rps).toFixed(2);
+    document.getElementById("cSetup").value = w.setup || "";
+    updateCalc();
+    document.getElementById("calc").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    toast(`${w.ticker} loaded into the Frame Calculator with a 2R target.`);
+  }
+  else if (act === "load-examples") { b.disabled = true; await loadExamples(); }
+  else if (act === "clear-examples") {
+    if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "Click again to clear"; return; }
+    await clearExamples();
+  }
+});
+
+document.addEventListener("change", async ev => {
+  const el = ev.target;
+  if (el.dataset.edit) {
+    const v = num(el.value); if (!Number.isFinite(v) || v <= 0) { toast("Enter a price above zero."); render(); return; }
+    if (el.dataset.edit === "wlast") {
+      const w = S.watch.find(x => x.id === el.dataset.id); if (w) await put("watch", w.id, { ...strip(w), last: v });
+    } else {
+      const p = S.positions.find(x => x.id === el.dataset.id); if (!p) return;
+      if (el.dataset.edit === "stop") {
+        const looser = p.side === "short" ? v > p.stop : v < p.stop;
+        if (looser) toast("Stop moved further away. That's copemaxxing; the Frame streak is watching.");
+      }
+      await put("positions", p.id, { ...strip(p), [el.dataset.edit]: v });
+    }
+  } else if (el.dataset.proto) {
+    const checks = { ...protocolState(), [el.dataset.proto]: el.checked };
+    await saveSettings({ protocol: { date: todayStr(), checks } });
+  } else if (el.id === "startEq") {
+    const v = num(el.value); if (Number.isFinite(v) && v >= 0) await saveSettings({ startingEquity: v });
+  }
+});
+
+document.addEventListener("submit", async ev => {
+  const f = ev.target;
+  if (f.dataset.closeForm) {
+    ev.preventDefault();
+    const p = S.positions.find(x => x.id === f.dataset.closeForm); if (!p) return;
+    const exit = num(f.exit.value), date = f.date.value || todayStr();
+    if (!Number.isFinite(exit) || exit <= 0) { toast("Enter the exit price."); return; }
+    const trade = { ticker: p.ticker, side: p.side, setup: p.setup || "", entry: p.entry, stop: p.stop, exit, shares: p.shares, opened: p.opened, closed: date };
+    if (p.example) trade.example = true;
+    S.closing = null;
+    await put("trades", uid(), trade);
+    await remove("positions", p.id);
+    const v = verdict(tradeR(trade));
+    toast(`${p.ticker} closed at ${rFmt(tradeR(trade))}. Verdict: ${v.label}.`);
+  }
+});
+
+document.getElementById("calc").addEventListener("input", updateCalc);
+document.getElementById("calc").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-risk]"); if (!b) return;
+  document.getElementById("cRisk").value = b.dataset.risk; updateCalc();
+});
+document.getElementById("calc").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const c = updateCalc();
+  if (!c.ticker) { toast("Add a ticker first."); document.getElementById("cTicker").focus(); return; }
+  if (!c.validDir || !c.shares) { toast("Set a valid entry and stop so the calculator can size it."); return; }
+  await put("positions", uid(), {
+    ticker: c.ticker, side: c.side, setup: c.setup, entry: c.entry, stop: c.stop,
+    target: Number.isFinite(c.target) ? c.target : +(c.entry + (c.side === "long" ? 2 : -2) * Math.abs(c.entry - c.stop)).toFixed(2),
+    shares: c.shares, last: c.entry, opened: todayStr(),
+  });
+  ["cTicker", "cEntry", "cStop", "cTarget", "cSetup"].forEach(id => { document.getElementById(id).value = ""; });
+  updateCalc();
+  toast(`${c.ticker} added to the lineup: ${c.shares} shares. Mew until it works.`);
+});
+document.getElementById("watchForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const f = ev.target;
+  const w = { ticker: f.wTicker.value.trim().toUpperCase(), trigger: num(f.wTrigger.value), stop: num(f.wStop.value), last: num(f.wLast.value), setup: f.wSetup.value.trim() };
+  if (!w.ticker || !Number.isFinite(w.trigger) || !Number.isFinite(w.stop)) { toast("Ticker, trigger and stop are required."); return; }
+  if (!Number.isFinite(w.last)) delete w.last;
+  await put("watch", uid(), w);
+  f.reset();
+  toast(`${w.ticker} is on the radar.`);
+});
+
+/* ===================== boot ===================== */
+function startDemo() {
+  if (S.mode !== "connecting") return;
+  S.mode = "demo";
+  const ex = clone(EXAMPLES);
+  S.settings = { ...clone(DEFAULT_SETTINGS), ...ex.settings };
+  S.positions = ex.positions.map(p => ({ id: uid(), example: true, ...p }));
+  S.trades = ex.trades.map(t => ({ id: uid(), example: true, ...t }));
+  S.watch = ex.watch.map(w => ({ id: uid(), example: true, ...w }));
+  render();
+}
+function startLive(db) {
+  DB = db; S.mode = "live";
+  S.positions = []; S.trades = []; S.watch = []; S.settings = clone(DEFAULT_SETTINGS);
+  ["positions", "trades", "watch"].forEach(c => {
+    db.collection(c).onSnapshot(snap => {
+      S[c] = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+      S.loaded[c] = true; render();
+    }, () => toast("Lost the connection to your saved board. Reload to reconnect."));
+  });
+  db.doc("settings/account").onSnapshot(s => {
+    S.settings = s.exists ? { ...clone(DEFAULT_SETTINGS), ...clone(s.data()) } : clone(DEFAULT_SETTINGS);
+    render();
+  }, () => {});
+  render();
+}
+
+render();
+const fallback = setTimeout(startDemo, 1500);
+if (window.claude && typeof window.claude.use === "function") {
+  window.claude.use("db").then(db => {
+    if (db) { clearTimeout(fallback); startLive(db); }
+    else { clearTimeout(fallback); startDemo(); }
+  }).catch(() => { clearTimeout(fallback); startDemo(); });
+} else { clearTimeout(fallback); startDemo(); }
+})();
+</script>
+</body>
+</html>
