@@ -19,3 +19,17 @@ It's one self-contained HTML file. Open `index.html` in a browser.
 There is no live price feed: you type in prices yourself. Saving uses the Claude artifact data store, so when you open the file outside Claude it runs as an example board that resets on reload.
 
 Not financial advice.
+
+## Autopilot (`autopilot/`)
+
+A companion daily dashboard that mirrors famous public portfolios — Berkshire Hathaway, ARK, Renaissance, Scion (Michael Burry), Pershing Square, Citadel, Two Sigma, Tiger Global, Coatue, Soros, Third Point, Greenlight, Appaloosa and the Gates Foundation Trust. It diffs each manager's two most recent SEC 13F filings into NEW / EXIT / INCREASED / REDUCED signals, ranks consensus buys and sells across the group, and sizes every position for your own portfolio value.
+
+Run it (Python 3, no dependencies):
+
+```bash
+cd autopilot
+python3 app.py
+# open http://127.0.0.1:8000
+```
+
+Data comes straight from SEC EDGAR, is cached in `autopilot/data/`, and refreshes every 12 hours (or on the Refresh button). See `autopilot/README.md` for details and limitations (13F data is quarterly with a 45-day lag). Educational tool, not financial advice.
