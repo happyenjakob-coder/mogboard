@@ -19,6 +19,9 @@ SEC_UA = os.environ.get(
     "Portfolio-Autopilot/1.0 (personal educational use; contact: you@example.com)",
 )
 
+PROGRESS = {"active": False, "done": 0, "total": 0, "current": ""}
+_PROGRESS_LOCK = threading.Lock()
+
 MANAGERS = [
     {"cik": "1067983", "name": "Berkshire Hathaway"},
     {"cik": "1697748", "name": "ARK Investment Management"},
@@ -398,6 +401,7 @@ def refresh(force=False):
         return cached
 
     def run(manager):
+        set_progress(True, current=manager["name"])
         try:
             filings = _list_13f_filings(manager["cik"])
             report = _manager_report(manager, filings)
@@ -411,9 +415,14 @@ def refresh(force=False):
             return report
         except Exception as exc:
             return {"cik": manager["cik"], "name": manager["name"], "error": str(exc)}
+        finally:
+            with _PROGRESS_LOCK:
+                PROGRESS["done"] += 1
 
     with ThreadPoolExecutor(max_workers=3) as pool:
+        set_progress(True, done=0, total=len(MANAGERS))
         results = list(pool.map(run, MANAGERS))
+        set_progress(False, current="")
 
     if cached:
         cached_by_cik = {m.get("cik"): m for m in cached.get("managers", [])}
@@ -452,6 +461,22 @@ def _load_cache():
             return json.load(f)
     except (OSError, ValueError):
         return None
+
+
+def set_progress(active, done=None, current="", total=None):
+    with _PROGRESS_LOCK:
+        PROGRESS["active"] = active
+        if done is not None:
+            PROGRESS["done"] = done
+        if current is not None:
+            PROGRESS["current"] = current
+        if total is not None:
+            PROGRESS["total"] = total
+
+
+def get_progress():
+    with _PROGRESS_LOCK:
+        return dict(PROGRESS)
 
 
 def get_summary():

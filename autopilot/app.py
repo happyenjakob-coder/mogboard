@@ -34,6 +34,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(engine.get_summary())
             except Exception as exc:
                 return self._json({"error": str(exc)}, 500)
+        if path == "/api/progress":
+            return self._json(engine.get_progress())
         if path == "/api/refresh":
             try:
                 return self._json(engine.refresh(force=True))

@@ -127,10 +127,34 @@ function render() {
   setStatus(`Last updated ${fetched}${stale} · auto-refreshes every 12h`);
 }
 
+let progressTimer = null;
+
+function stopProgressPolling() {
+  if (progressTimer) {
+    clearInterval(progressTimer);
+    progressTimer = null;
+  }
+}
+
+function startProgressPolling() {
+  stopProgressPolling();
+  progressTimer = setInterval(async () => {
+    try {
+      const resp = await fetch("/api/progress");
+      const p = await resp.json();
+      if (p.active && p.total) {
+        const now = p.current ? ` — now loading ${p.current}` : "";
+        setStatus(`First run: fetched ${p.done} of ${p.total} portfolios${now} · takes about a minute`);
+      }
+    } catch (err) {}
+  }, 1500);
+}
+
 async function load(force) {
   const btn = $("#refresh");
   btn.disabled = true;
-  setStatus(force ? "Refreshing from SEC EDGAR — this takes ~30s…" : "Loading…");
+  setStatus("Loading…");
+  startProgressPolling();
   try {
     const resp = await fetch(force ? "/api/refresh" : "/api/summary", force ? { method: "POST" } : {});
     const data = await resp.json();
@@ -143,6 +167,7 @@ async function load(force) {
   } catch (err) {
     setStatus("Could not reach the local server: " + err, true);
   } finally {
+    stopProgressPolling();
     btn.disabled = false;
   }
 }
