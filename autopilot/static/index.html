@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfolio Autopilot</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>Portfolio Autopilot</h1>
+    <p class="sub">What the world's most famous portfolios actually did last quarter — diffed, ranked, and sized for you</p>
+  </div>
+  <div class="controls">
+    <label>Portfolio size $
+      <input id="size" type="number" min="100" step="100" value="10000">
+    </label>
+    <button id="refresh" class="btn">Refresh data</button>
+  </div>
+</header>
+
+<div id="status" class="statusbar"></div>
+<nav>
+  <button class="tab active" data-tab="consensus">Consensus moves</button>
+  <button class="tab" data-tab="managers">By manager</button>
+  <button class="tab" data-tab="help">How to read this</button>
+</nav>
+
+<main>
+  <section id="tab-consensus" class="tabpane active">
+    <div class="cols">
+      <div>
+        <h2>Where the big money is buying</h2>
+        <div id="buys"></div>
+      </div>
+      <div>
+        <h2>Where the big money is selling</h2>
+        <div id="sells"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-managers" class="tabpane">
+    <div id="managers"></div>
+  </section>
+
+  <section id="tab-help" class="tabpane">
+    <div class="help">
+      <h2>How to read this</h2>
+      <p><b>Consensus moves</b> aggregate dollar changes across every tracked manager between their two
+      most recent 13F filings. A position in <i>buys</i> means the group added money on net; <i>sells</i>
+      means they trimmed or exited on net.</p>
+      <p><b>Your copy</b> shows what that position would be worth in your portfolio if you mirrored the
+      managers equally: it uses the average portfolio weight the managers who hold it assign to that stock,
+      times your portfolio size.</p>
+      <p><b>Signals</b> per manager: <span class="badge new">NEW</span> position opened,
+      <span class="badge exit">EXIT</span> sold out completely,
+      <span class="badge inc">INCREASED</span> / <span class="badge red">REDUCED</span> share count changed by 5% or more.</p>
+      <p><b>Freshness:</b> 13F filings are quarterly and must be filed within 45 days of quarter end.
+      Check in daily — this page pulls the latest filings from SEC EDGAR, refreshing its cache every 12
+      hours, or hit Refresh to force a pull right now. The manager list is in <code>engine.py</code>.</p>
+      <p class="disclaimer"><b>Disclaimer:</b> educational tool only, not financial advice. 13F data lags
+      the market by up to 45 days and managers may have traded since filing.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Data: SEC EDGAR 13F filings &middot; runs locally &middot; not affiliated with the SEC or any manager listed
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>
