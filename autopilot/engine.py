@@ -450,8 +450,10 @@ def refresh(force=False):
         "errors": errors,
         "consensus": consensus,
     }
-    with open(CACHE_PATH, "w") as f:
+    tmp_path = CACHE_PATH + ".tmp"
+    with open(tmp_path, "w") as f:
         json.dump(data, f)
+    os.replace(tmp_path, CACHE_PATH)
     return data
 
 

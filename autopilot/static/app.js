@@ -59,7 +59,10 @@ function renderConsensus(data) {
   buys.innerHTML = "";
   sells.innerHTML = "";
   const c = data.consensus || { buys: [], sells: [] };
-  if (!c.buys.length) buys.innerHTML = "<p class='meta'>No data yet.</p>";
+  if (!c.buys.length && !c.sells.length) {
+    buys.innerHTML = "<p class='meta'>No data loaded yet. Click Refresh data — the first pull takes 1–2 minutes and this page fills in by itself.</p>";
+    return;
+  }
   c.buys.forEach((e) => buys.appendChild(consensusRow(e, "buy")));
   c.sells.forEach((e) => sells.appendChild(consensusRow(e, "sell")));
 }
@@ -138,15 +141,21 @@ function stopProgressPolling() {
 
 function startProgressPolling() {
   stopProgressPolling();
+  const startedAt = Date.now();
   progressTimer = setInterval(async () => {
+    const secs = Math.round((Date.now() - startedAt) / 1000);
     try {
       const resp = await fetch("/api/progress");
       const p = await resp.json();
       if (p.active && p.total) {
         const now = p.current ? ` — now loading ${p.current}` : "";
-        setStatus(`First run: fetched ${p.done} of ${p.total} portfolios${now} · takes about a minute`);
+        setStatus(`Updating: ${p.done} of ${p.total} portfolios fetched${now} · ${secs}s elapsed · keep this tab open`);
+      } else {
+        setStatus(`Updating… ${secs}s elapsed — the page fills in automatically when done`);
       }
-    } catch (err) {}
+    } catch (err) {
+      setStatus(`Updating… ${secs}s elapsed`);
+    }
   }, 1500);
 }
 
